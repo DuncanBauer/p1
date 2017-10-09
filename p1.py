@@ -1,3 +1,9 @@
+#
+#   P1
+#   Spencer Witkin
+#   Duncan Bauer
+#
+
 from p1_support import load_level, show_level, save_level_costs
 #from math import inf, sqrt
 import math
