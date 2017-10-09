@@ -18,39 +18,52 @@ def dijkstras_shortest_path(initial_position, destination, graph, adj):
         Otherwise, return None.
 
     """
-    unvisited = set()
+    unvisited = []
     dist = {}
     prev = {}
 
     for v in graph['spaces']:
         dist[v] = math.inf
         prev[v] = None
-        unvisited.add(v)
 
     for v in graph['waypoints']:
-        dist[v] = math.inf
-        prev[v] = None
-        unvisited.add(v)
-
-    adj_cells = adj(graph, initial_position)
-    print(adj_cells)
-    print(adj_cells[1])
-    get_min_cost(adj_cells)
-   # while len(unvisited) > 0:
-    #    u =
+        dist[graph['waypoints'][v]] = math.inf
+        prev[graph['waypoints'][v]] = None
 
     dist[initial_position] = 0
+    heappush(unvisited, (0, initial_position))
+
+    while unvisited != []:
+        u = heappop(unvisited)
+
+        if u[1] == destination:
+            break
+
+        adjacent = navigation_edges(graph, u[1])
+        for v in adjacent:
+            alt = dist[u[1]] + v[1]
+            if alt < dist[v[0]]:
+                if dist[v[0]] == math.inf:
+                    heappush(unvisited, (alt, v[0]))
+                dist[v[0]] = alt
+                prev[v[0]] = u[1]
 
 
-def get_min_cost(adj):
-    j = math.inf
+    if dist[destination] == math.inf:
+        return None
+    else:
+        shortpath = []
+        shortpath.append(u[1])
+        w = u[1]
+        while dist[w] != 0:
+            shortpath.append(prev[w])
+            w = prev[w]
 
-    for i in adj:
-        if j > i[1]:
-            j = i[1]
-            k = i[0]
+        shortpath.reverse()
+        return shortpath
 
-    return j,k
+
+
 
 
 def dijkstras_shortest_path_to_all(initial_position, graph, adj):
@@ -64,7 +77,35 @@ def dijkstras_shortest_path_to_all(initial_position, graph, adj):
     Returns:
         A dictionary, mapping destination cells to the cost of a path from the initial_position.
     """
-    pass
+    unvisited = []
+    dist = {}
+    prev = {}
+
+
+    for v in graph['spaces']:
+        dist[v] = math.inf
+        prev[v] = None
+
+    for v in graph['waypoints']:
+        dist[graph['waypoints'][v]] = math.inf
+        prev[graph['waypoints'][v]] = None
+    
+    dist[initial_position] = 0
+    heappush(unvisited, (0, initial_position))
+
+    while unvisited != []:
+        u = heappop(unvisited)
+
+        adjacent = navigation_edges(graph, u[1])
+        for v in adjacent:
+            alt = dist[u[1]] + v[1]
+            if alt < dist[v[0]]:
+                if dist[v[0]] == math.inf:
+                    heappush(unvisited, (alt, v[0]))
+                dist[v[0]] = alt
+                prev[v[0]] = u[1]
+
+    return dist
 
 
 def navigation_edges(level, cell):
@@ -93,18 +134,19 @@ def navigation_edges(level, cell):
         j = 0
         for i in adj:
             weight = 0
-            if i in level['spaces']:
-                if j < 3:
-                    weight = (level['spaces'][cell] * 0.5) + (level['spaces'][adj[j]] * 0.5)
-                else:
-                    weight = (level['spaces'][cell] * math.sqrt(2)) + (level['spaces'][adj[j]] * math.sqrt(2))
-                true.append((adj[j], weight))
-            elif i in level['waypoints']:
-                if j < 3:
-                    weight = (level['spaces'][cell] * 0.5) + (1 * 0.5)
-                else:
-                    weight = (level['spaces'][cell] * math.sqrt(2)) + (1 * math.sqrt(2))
-                true.append((adj[j], weight))
+            if i not in level['walls']:
+                if i in level['spaces']:
+                    if j < 4:
+                        weight = (level['spaces'][cell] * 0.5) + (level['spaces'][adj[j]] * 0.5)
+                    else:
+                        weight = (level['spaces'][cell] * math.sqrt(2)* 0.5) + (level['spaces'][adj[j]] * math.sqrt(2) * 0.5)
+                    true.append((adj[j], weight))
+                elif i in level['waypoints']:
+                    if j < 4:
+                        weight = (level['spaces'][cell] * 0.5) + (1 * 0.5)
+                    else:
+                        weight = (level['spaces'][cell] * math.sqrt(2) * 0.5) + (1 * math.sqrt(2) * 0.5)
+                    true.append((adj[j], weight))
 
             j += 1
 
@@ -133,10 +175,10 @@ def test_route(filename, src_waypoint, dst_waypoint):
 
     # Search for and display the path from src to dst.
     path = dijkstras_shortest_path(src, dst, level, navigation_edges)
-    #if path:
-    #    show_level(level, path)
-    #else:
-    #    print("No path possible!")
+    if path:
+        show_level(level, path)
+    else:
+        print("No path possible!")
 
 
 def cost_to_all_cells(filename, src_waypoint, output_filename):
@@ -163,12 +205,11 @@ def cost_to_all_cells(filename, src_waypoint, output_filename):
 
 
 if __name__ == '__main__':
-    filename, src_waypoint, dst_waypoint = 'example.txt','a','e'
+    filename, src_waypoint, dst_waypoint = 'my_maze.txt','a','g'
 
-    #show_level(load_level(filename))
 
     # Use this function call to find the route between two waypoints.
     test_route(filename, src_waypoint, dst_waypoint)
 
     # Use this function to calculate the cost to all reachable cells from an origin point.
-    # cost_to_all_cells(filename, src_waypoint, 'my_costs.csv')
+    cost_to_all_cells(filename, src_waypoint, 'my_maze_costs.csv')
